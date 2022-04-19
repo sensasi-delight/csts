@@ -19,7 +19,7 @@ import Avatar from '@material-ui/core/Avatar';
 import Chip from '@material-ui/core/Chip';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Container from "@material-ui/core/Container";
-import { Dialog, DialogContent, DialogTitle, Toolbar } from '@material-ui/core';
+import { Dialog, DialogContent, DialogTitle, Grid, Toolbar } from '@material-ui/core';
 
 import SubjectIcon from '@material-ui/icons/Subject'
 
@@ -64,7 +64,7 @@ export default function BatchesDetailCust() {
 		<>
 			{batch && batch.processes ?
 				<Container className={classes.cardGrid} maxWidth="md">
-					<QRCode style={{paddingBottom: "2em"}} value={window.location.href} />
+					<QRCode style={{ paddingBottom: "2em" }} value={window.location.href} />
 					<Typography variant="h4" component="h1" gutterBottom>Ringkasan</Typography>
 					<Table size='small'>
 						<TableBody>
@@ -109,7 +109,11 @@ export default function BatchesDetailCust() {
 
 					</Table>
 
-				</Container> : <CircularProgress />}
+				</Container> :
+				<Grid container justifyContent="center">
+					<CircularProgress />
+				</Grid>
+			}
 
 			{batch && batch.processes &&
 

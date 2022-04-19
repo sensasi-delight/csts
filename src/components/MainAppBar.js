@@ -13,7 +13,6 @@ import ListItemText from "@material-ui/core/ListItemText";
 import ListSubheader from "@material-ui/core/ListSubheader";
 import Tooltip from "@material-ui/core/Tooltip";
 import Typography from "@material-ui/core/Typography";
-// import CircularProgress from '@material-ui/core/CircularProgress';
 
 import HomeIcon from "@material-ui/icons/Home";
 import MoreVertIcon from "@material-ui/icons/MoreVert";

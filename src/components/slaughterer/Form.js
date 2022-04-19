@@ -69,7 +69,12 @@ export default function SlaughtererForm(props) {
 						</Button>
 					}
 					{isUploadingImg ?
-						<CircularProgress /> :
+						<Grid
+							container
+							justifyContent="center"
+						>
+							<CircularProgress />
+						</Grid> :
 						slaughterer.imgPath &&
 						<img width="100%" src={"http://" + process.env.REACT_APP_API_SERVER + "/" + slaughterer.imgPath} alt="Foto Penyembelih" />
 					}
@@ -77,20 +82,25 @@ export default function SlaughtererForm(props) {
 
 				</Grid>
 				<Grid item xs={6}>
-				{
+					{
 						!props.isDisabled &&
-					<Button variant="contained" color="primary" component="label">
-						Unggah Foto Sertifikat
-						<input
-							accept="image/*"
-							type="file"
-							onChange={(e) => handleUploadClick(e, "certificateImg")}
-							hidden
-						/>
-					</Button>
-				}
+						<Button variant="contained" color="primary" component="label">
+							Unggah Foto Sertifikat
+							<input
+								accept="image/*"
+								type="file"
+								onChange={(e) => handleUploadClick(e, "certificateImg")}
+								hidden
+							/>
+						</Button>
+					}
 					{isUploadingCertificateImg ?
-						<CircularProgress /> :
+						<Grid
+							container
+							justifyContent="center"
+						>
+							<CircularProgress />
+						</Grid> :
 						slaughterer.certificateImgPath &&
 						<img width="100%" src={"http://" + process.env.REACT_APP_API_SERVER + "/" + slaughterer.certificateImgPath} alt="Foto Sertifikat Penyembelih" />
 					}

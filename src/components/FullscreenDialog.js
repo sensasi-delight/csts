@@ -76,7 +76,14 @@ export default function FullscreenDialog(props) {
 						<Container maxWidth="sm">
 
 							{
-								props.isLoading ? <CircularProgress /> :
+								props.isLoading ?
+									<Grid
+										container
+										justifyContent="center"
+									>
+										<CircularProgress />
+									</Grid>
+									:
 									<>
 										{props.children}
 										{!_isSubmitDisabled &&

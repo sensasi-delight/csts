@@ -233,7 +233,7 @@ function BatchDetail(props) {
 
 					<Grid container spacing={4}>
 
-						<Grid item xs={12} sm={4} style={{textAlign: "center"}}>
+						<Grid item xs={12} sm={4} style={{ textAlign: "center" }}>
 							<QRCode value={qrValue} />
 						</Grid>
 						<Grid item xs={12} sm={8}>
@@ -289,7 +289,12 @@ function BatchDetail(props) {
 						</Grid>
 					</Grid>
 
-				</Container> : <CircularProgress />}
+				</Container> :
+				<Grid container justifyContent="center">
+					<CircularProgress />
+				</Grid>
+
+			}
 
 			<Container maxWidth="md" style={{ paddingBottom: "8em" }}>
 				<Grid container spacing={4}>
@@ -317,7 +322,7 @@ function BatchDetail(props) {
 										}
 									</CardContent>
 									<CardActions>
-										<Button size="small" startIcon={processObj.createdAt ? <VisibilityIcon /> : <EditIcon />} variant="contained" color={processObj.createdAt ? "default" : "primary"}  onClick={() => {
+										<Button size="small" startIcon={processObj.createdAt ? <VisibilityIcon /> : <EditIcon />} variant="contained" color={processObj.createdAt ? "default" : "primary"} onClick={() => {
 											toggleForm(processObj.id)
 
 											if (!processObj.createdAt) {
@@ -329,9 +334,9 @@ function BatchDetail(props) {
 
 											{
 												processObj.createdAt ?
-												"lihat data"
-												:
-												"Masukkan data"
+													"lihat data"
+													:
+													"Masukkan data"
 											}
 
 										</Button>

@@ -12,6 +12,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import EditIcon from '@material-ui/icons/Edit';
 
 import ApiHandler from "../../classes/ApiHandler";
+import { Grid } from '@material-ui/core';
 
 
 
@@ -33,7 +34,11 @@ export default function SlaughtererTable(props) {
 	return (
 		<>
 			{
-				response.message === "belum dilakukan fetch" ? <CircularProgress /> :
+				response.message === "belum dilakukan fetch" ?
+					<Grid container justifyContent="center">
+						<CircularProgress />
+					</Grid>
+					:
 					<Table size="small">
 						<TableHead>
 							<TableRow>

@@ -9,7 +9,7 @@ import DialogTitle from "@material-ui/core/DialogTitle";
 import TextField from "@material-ui/core/TextField";
 
 import ApiHandler from "../../classes/ApiHandler";
-import { InputAdornment } from "@material-ui/core";
+import { Grid, InputAdornment } from "@material-ui/core";
 
 import SingleLineImageList from "../SingleLineImageList";
 
@@ -60,12 +60,17 @@ export default function StunningFormDialog(props) {
 					/>
 				</Button>
 				{isUploadingImg ?
-					<CircularProgress /> :
+					<Grid
+						container
+						justifyContent="center"
+					>
+						<CircularProgress />
+					</Grid> :
 					processObj.imgPaths &&
 					<SingleLineImageList isDisabled={isDisabled} itemData={processObj.imgPaths} delImg={(imgPath) => {
 						processObj.imgPaths.splice(processObj.imgPaths.findIndex(el => el === imgPath), 1)
 						setProcess({ ...processObj })
-					}}/>
+					}} />
 				}
 
 

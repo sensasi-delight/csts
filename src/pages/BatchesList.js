@@ -139,7 +139,11 @@ function BatchesList() {
 				/>
 			</Container>
 			<Container className={classes.cardGrid} maxWidth="md">
-				{isLoading ? <CircularProgress /> :
+				{isLoading ?
+					<Grid container justifyContent="center">
+						<CircularProgress />
+					</Grid>
+					:
 
 					<Grid container spacing={4}>
 						<Grid item xs={12} sm={6} md={4}>
@@ -188,9 +192,13 @@ function BatchesList() {
 				setProducts={setProducts}
 				toggleForm={() => toggleUi('batchForm')}
 				_parentHandleSubmit={() => {
+					setIsLoading(true)
 					ApiHandler.readBatches([{ key: 'date', value: month }])
 						.then(res => res.json())
-						.then(data => setbatches(data.data))
+						.then(data => {
+							setbatches(data.data)
+							setIsLoading(false)
+						})
 				}}
 			/>
 		</>
