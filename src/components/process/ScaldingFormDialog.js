@@ -1,155 +1,243 @@
 import { useState } from "react";
-import { makeStyles } from '@material-ui/core/styles';
+import { getDefaultHelperTextNumberField, getInputProps, getDatetimeHelperText, getNFailHelperText } from "./ProcessFormHelper";
 
 import Button from "@material-ui/core/Button";
 import CircularProgress from "@material-ui/core/CircularProgress";
+import CloseIcon from '@material-ui/icons/Close';
 import Dialog from "@material-ui/core/Dialog";
+import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogTitle from "@material-ui/core/DialogTitle";
-import TextField from "@material-ui/core/TextField";
-
-import ApiHandler from "../../classes/ApiHandler";
-import { InputAdornment } from "@material-ui/core";
-
-
+import Grid from "@material-ui/core/Grid";
+import IconButton from '@material-ui/core/IconButton';
+import moment from "moment";
 import SingleLineImageList from "../SingleLineImageList";
-
-
-const useStyles = makeStyles((theme) => ({
-	inputMargin: {
-		marginTop: "1.5em"
-	}
-}));
+import TextField from "@material-ui/core/TextField";
+import UploadButton from "../UploadButton";
 
 
 export default function ScaldingFormDialog(props) {
 
-	const classes = useStyles();
-	const { isOpen, closeForm, handleSubmit, isDisabled } = props;
+  const { isOpen, closeForm, handleSubmit, isDisabled, nFailMax, prevProcess } = props;
 
-	const [processObj, setProcess] = useState(props.process)
+  const [processObj, setProcess] = useState(props.process)
+  const datetimeTemp = moment().format('YYYY-MM-DDTHH:mm')
+  const [isLoading, setIsLoading] = useState(false)
 
-	const [isUploadingImg, setIsUploadingImg] = useState(false)
+  const [isDatetimeError, setIsDatetimeError] = useState(false);
+  const [isNFailError, setIsNFailError] = useState(false);
+  const [isTemperatureError, setIsTemperatureError] = useState(false);
 
-	const handleUploadClick = (e) => {
-		const file = e.target.files[0]
-		const formData = new FormData()
-		formData.append('imgFile', file)
-		setIsUploadingImg(true)
+  const isInputValid = () => {
+    return !isDatetimeError && !isNFailError && !isTemperatureError
+  }
 
-		ApiHandler.uploadImage(formData)
-			.then(response => response.json())
-			.then(data => {
-				processObj.imgPaths.push(data.data)
-				setIsUploadingImg(false)
-			})
-	}
+  const validateInput = () => {
+    const isDatetimeBefore = moment(processObj.datetime).isBefore(prevProcess.datetime)
+    const isDatetimeEmpty = !processObj.datetime
+    setIsDatetimeError(isDatetimeEmpty || isDatetimeBefore)
 
-	return (
-		<Dialog
-			maxWidth="xs"
-			open={isOpen}
-			onClose={closeForm}
-		>
-			<DialogTitle>{processObj.name}</DialogTitle>
-			<DialogContent>
-				<Button variant="contained" color="primary" component="label" disabled={isDisabled}>
-					Unggah Foto Proses
-					<input
-						accept="image/*"
-						type="file"
-						onChange={(e) => handleUploadClick(e)}
-						hidden
-					/>
-				</Button>
-				{isUploadingImg ?
-					<CircularProgress /> :
-					processObj.imgPaths &&
-					<SingleLineImageList isDisabled={isDisabled} itemData={processObj.imgPaths} delImg={(imgPath) => {
-						processObj.imgPaths.splice(processObj.imgPaths.findIndex(el => el === imgPath), 1)
-						setProcess({ ...processObj })
-					}}/>
-				}
+    const isTemperaturNanOrLessThanZero = isNaN(parseInt(processObj.temperature)) || processObj.temperature < 0
+    setIsTemperatureError(isTemperaturNanOrLessThanZero);
 
+    const isNFailNan = isNaN(parseInt(processObj.nFail))
+    const isNFailOutRange = 0 > processObj.nFail || processObj.nFail > nFailMax
+    setIsNFailError(isNFailNan || isNFailOutRange)
+  }
 
-				<TextField
-					required
-					autoComplete="off"
-					margin="dense"
-					label="Waktu Proses"
-					value={processObj.datetime || (new Date()).toISOString().substring(-1, 16)}
-					disabled={isDisabled}
-					type="datetime-local"
-					fullWidth
-					InputLabelProps={{
-						shrink: true,
-					}}
-					onChange={e => {
-						processObj.datetime = e.target.value
-						setProcess({ ...processObj })
-					}}
-				/>
+  const setIsErrorFalse = attr => {
+    switch (attr) {
+      case 'datetime':
+        setIsDatetimeError(false)
+        break;
 
+      case 'nFail':
+        setIsNFailError(false)
+        break;
 
-				<TextField
-					required
-					autoComplete="off"
-					margin="dense"
-					label="Suhu Didih"
-					InputProps={{
-						endAdornment: <InputAdornment position="end">Celcius</InputAdornment>,
-					}}
-					value={processObj.temperature}
-					disabled={isDisabled}
-					type="number"
-					min="0"
-					fullWidth
-					onChange={e => {
-						processObj.temperature = e.target.value
-						setProcess({ ...processObj })
-					}}
-				/>
+      case 'temperature':
+        setIsTemperatureError(false)
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  const handleTextfieldChange = (e, attr) => {
+    setIsErrorFalse(attr)
+    processObj[attr] = e.target.value ? e.target.value : null
+
+    setProcess({ ...processObj })
+  }
+
+  const handleNumberfieldChange = (e, attr) => {
+    setIsErrorFalse(attr)
+    processObj[attr] = isNaN(parseInt(e.target.value)) ? null : parseInt(e.target.value)
+
+    setProcess({ ...processObj })
+  }
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault()
+
+    if (isInputValid()) {
+      setIsLoading(true);
+      handleSubmit(processObj).then(() => {
+        closeForm();
+        setIsLoading(false);
+      });
+    }
+  }
 
 
-				<TextField
-					required
-					autoComplete="off"
-					margin="dense"
-					label="Jumlah Gagal"
-					InputProps={{
-						endAdornment: <InputAdornment position="end">Ekor</InputAdornment>,
-					}}
-					value={processObj.nFail}
-					disabled={isDisabled}
-					type="number"
-					min="0"
-					fullWidth
-					onChange={e => {
-						processObj.nFail = e.target.value
-						setProcess({ ...processObj })
-					}}
-				/>
+  return (
+    <Dialog maxWidth="xs" open={isOpen} onClose={isLoading ? () => { } : closeForm}>
+
+      {
+        !isLoading &&
+        <IconButton
+          aria-label="close"
+          onClick={closeForm}
+          children={<CloseIcon />}
+          style={{
+            position: 'absolute',
+            right: '.3em',
+            top: '.3em',
+          }}
+        />
+      }
+
+      <DialogTitle>{processObj.name}</DialogTitle>
+
+      <DialogContent>
+        {
+          isLoading ?
+            <Grid container justifyContent="center">
+              <CircularProgress />
+            </Grid>
+            :
+            <>
+              {
+                processObj.imgPaths &&
+                <SingleLineImageList
+                  isDisabled={isDisabled}
+                  imgPaths={processObj.imgPaths}
+                  processObj={processObj}
+                  setProcess={setProcess}
+                />
+              }
+
+              {
+                !isDisabled &&
+                <UploadButton setIsImagesUploading={setIsLoading} processObj={processObj} />
+              }
+
+              <form id="ScaldingForm" noValidate autoComplete="off" onSubmit={handleFormSubmit}>
+
+                <TextField
+                  fullWidth
+                  required
+
+                  label="Waktu Proses"
+                  margin="normal"
+                  type="datetime-local"
+
+                  error={isDatetimeError}
+
+                  value={processObj.datetime || datetimeTemp}
+
+                  helperText={getDatetimeHelperText(isDatetimeError, prevProcess.datetime)}
+                  InputProps={getInputProps(isDisabled)}
+                  onChange={e => handleTextfieldChange(e, 'datetime')}
+                />
+
+                <TextField
+                  fullWidth
+                  required
+
+                  label="Suhu Didih"
+                  margin="dense"
+                  type="number"
+
+                  error={isTemperatureError}
+
+                  value={parseInt(processObj.temperature) || (processObj.temperature === 0 ? 0 : '')}
+
+                  helperText={getDefaultHelperTextNumberField(isTemperatureError)}
+                  InputProps={getInputProps(isDisabled, 'Celcius')}
+                  onChange={e => handleTextfieldChange(e, 'temperature')}
+                />
 
 
-				<TextField
-					multiline
-					autoComplete="off"
-					margin="dense"
-					label="Catatan Tambahan"
-					value={processObj.note}
-					disabled={isDisabled}
-					fullWidth
-					onChange={(e) => {
-						processObj.note = e.target.value
-						setProcess({ ...processObj })
-					}}
-				/>
+                <TextField
+                  fullWidth
+                  required
 
-				<Button className={classes.inputMargin} style={{ marginBottom: "2em" }} disabled={isDisabled} variant="contained" onClick={() => { handleSubmit(processObj); closeForm() }} color="primary" autoFocus>
-					Simpan
-				</Button>
-			</DialogContent>
-		</Dialog>
-	)
+                  label="Jumlah Gagal"
+                  margin="dense"
+                  type="number"
+
+                  error={isNFailError}
+
+                  value={parseInt(processObj.nFail) || (processObj.nFail === 0 ? 0 : '')}
+
+                  helperText={getNFailHelperText(isNFailError, nFailMax)}
+                  InputProps={getInputProps(isDisabled, 'Ekor')}
+                  onChange={e => handleNumberfieldChange(e, 'nFail')}
+                />
+
+
+                <TextField
+                  fullWidth
+                  multiline
+
+                  label="Catatan Tambahan"
+                  margin="dense"
+
+                  value={processObj.note || ''}
+
+                  InputProps={getInputProps(isDisabled)}
+                  onChange={e => handleTextfieldChange(e, 'note')}
+                />
+
+              </form>
+
+            </>
+        }
+      </DialogContent>
+
+      <DialogActions>
+        {
+          !isLoading &&
+          <>
+            <Button type="button" color="inherit" onClick={() => closeForm()}>
+              {isDisabled ? 'Tutup' : 'Batal'}
+            </Button>
+
+            {
+              !isDisabled &&
+              <Button
+                type="submit"
+                disabled={!isInputValid()}
+                form="ScaldingForm"
+                color="primary"
+                onClick={() => {
+                  if (!processObj.datetime) {
+                    processObj.datetime = datetimeTemp
+                    setProcess({ ...processObj })
+                  }
+
+                  validateInput()
+                }}
+              >
+                Simpan
+              </Button>
+            }
+          </>
+        }
+      </DialogActions>
+    </Dialog>
+  )
 
 }

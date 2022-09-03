@@ -115,7 +115,6 @@ export default function FullscreenDialog(props) {
 						{props.children}
 					</Container>
 					<Toolbar />
-					<Toolbar />
 				</>
 
 			}

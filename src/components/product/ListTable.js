@@ -1,78 +1,134 @@
 import { useEffect, useState } from 'react';
 
+import ApiHandler from '../../classes/ApiHandler';
+
+import ProductForm from "./Form";
+
+import EditIcon from '@material-ui/icons/Edit';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import Grid from '@material-ui/core/Grid';
+import IconButton from '@material-ui/core/IconButton';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
-import EditIcon from '@material-ui/icons/Edit';
-
-import ApiHandler from '../../classes/ApiHandler';
-import CircularProgress from '@material-ui/core/CircularProgress';
 
 
 export default function ProductTable(props) {
-	const [response, setResponse] = useState({
-		success: false,
-		data: [],
-		message: "belum dilakukan fetch"
-	})
+
+  const { sendHandleCreate } = props
+
+  const [product, setProduct] = useState({})
+
+  const [isLoading, setIsLoading] = useState(false)
+  const [isFormOpen, setIsFormOpen] = useState(false)
+
+  const [products, setProducts] = useState([])
+
+  const [response, setResponse] = useState({})
+
+  const handleCreate = () => {
+    setProduct({})
+    openForm()
+  }
+
+  const openForm = () => {
+    setIsFormOpen(true)
+  }
+
+  const closeForm = () => {
+    setIsFormOpen(false)
+  }
+
+  const fetchData = async () => {
+    setIsLoading(true)
+
+    return ApiHandler.readProducts()
+      .then(response => response.json())
+      .then(response => {
+        setResponse(response)
+        setProducts(response.data.map(row => row.Record))
+      })
+      .finally(() => setIsLoading(false))
+  }
+
+  useEffect(() => {
+    sendHandleCreate(() => handleCreate)
+
+    fetchData()
+  }, [])
 
 
-	useEffect(() => {
-		ApiHandler.readProducts()
-			.then(res => res.json())
-			.then(data => setResponse(data))
-	}, [])
+  return (
+    <>
+      {
+        isLoading
+          ? <Grid
+            container
+            justifyContent="center"
+          >
+            <CircularProgress />
+          </Grid>
+          : <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell></TableCell>
+                <TableCell>Kode</TableCell>
+                <TableCell>Nama</TableCell>
+                <TableCell>Bahan</TableCell>
+                <TableCell>NO. Sertifikat Halal</TableCell>
+                <TableCell></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {
+                response.ok && products.length === 0 &&
+                <TableRow>
+                  <TableCell colSpan="5">{response.success ? "belum ada data tersimpan" : response.message}</TableCell>
+                </TableRow>
+              }
 
+              {
+                products.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell>
+                      {
+                        product.imgPaths?.length > 0 &&
+                        <img width="100px" src={"http://" + process.env.REACT_APP_API_SERVER + "/" + product.imgPaths[0]} alt={"Foto " + product.name} />
+                      }
+                    </TableCell>
+                    <TableCell>{product.id}</TableCell>
+                    <TableCell>{product.name}</TableCell>
+                    <TableCell>{product.ingredients.join(', ')}</TableCell>
+                    <TableCell>{product.halalCertificateNo}</TableCell>
+                    <TableCell>
+                      <Tooltip title="Ubah">
+                        <IconButton size="small" onClick={() => {
+                          setProduct(product)
+                          openForm()
+                        }} color="primary">
+                          <EditIcon />
+                        </IconButton>
 
-	return (
-		<>
-			{
-				response.message === "belum dilakukan fetch" ? <CircularProgress /> :
-					<Table size="small">
-						<TableHead>
-							<TableRow>
-								<TableCell></TableCell>
-								<TableCell>Kode</TableCell>
-								<TableCell>Nama</TableCell>
-								<TableCell>Bahan</TableCell>
-								<TableCell>NO. Sertifikat Halal</TableCell>
-								<TableCell></TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							{response.data.length === 0 &&
-								<TableRow>
-									<TableCell colSpan="5">{response.success ? "belum ada data tersimpan" : response.message}</TableCell>
-								</TableRow>
-							}
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))
+              }
+            </TableBody>
+          </Table>
+      }
 
-							{response.data.map((row) => (
-								<TableRow key={row.Record.id}>
-									<TableCell>
-										<img width="100px" src={"http://" + process.env.REACT_APP_API_SERVER + "/" + row.Record.imgPath} alt={"Foto " + row.Record.ingredients} />
-									</TableCell>
-									<TableCell>{row.Record.id}</TableCell>
-									<TableCell>{row.Record.name}</TableCell>
-									<TableCell>{row.Record.ingredients}</TableCell>
-									<TableCell>{row.Record.halalCertificateNo}</TableCell>
-									<TableCell>
-										<Tooltip title="Ubah">
-											<IconButton size="small" onClick={() => props._handleEdit(row.Record.id)} color="primary">
-												<EditIcon />
-											</IconButton>
+      <ProductForm
+        isOpen={isFormOpen}
+        closeForm={closeForm}
+        handleAfterSubmit={fetchData}
+        product={product}
+        products={products}
+      />
 
-										</Tooltip>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-			}
-
-		</>
-	);
+    </>
+  );
 }

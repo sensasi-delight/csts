@@ -1,133 +1,376 @@
-import { useState } from "react";
-import { makeStyles } from '@material-ui/core/styles';
+import { useEffect, useState } from "react";
+import { getInputProps, getDatetimeHelperText, getNFailHelperText, getDefaultHelperText, getNPackHelperText } from "./ProcessFormHelper";
+
+import moment from "moment";
+
+import ApiHandler from "../../classes/ApiHandler";
+import ProductChip from "../ProductChip";
+import ProductForm from "../product/Form";
+import UploadButton from "../UploadButton";
 
 import Button from "@material-ui/core/Button";
 import CircularProgress from "@material-ui/core/CircularProgress";
+import CloseIcon from '@material-ui/icons/Close';
 import Dialog from "@material-ui/core/Dialog";
+import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogTitle from "@material-ui/core/DialogTitle";
+import FormControl from "@material-ui/core/FormControl";
+import FormHelperText from "@material-ui/core/FormHelperText";
+import Grid from "@material-ui/core/Grid";
+import IconButton from '@material-ui/core/IconButton';
+import Input from "@material-ui/core/Input";
+import InputLabel from "@material-ui/core/InputLabel";
+import MenuItem from "@material-ui/core/MenuItem";
+import Select from "@material-ui/core/Select";
+import SingleLineImageList from "../SingleLineImageList";
 import TextField from "@material-ui/core/TextField";
 
-import ApiHandler from "../../classes/ApiHandler";
-import { InputAdornment } from "@material-ui/core";
 
-import SingleLineImageList from "../SingleLineImageList";
-
-
-const useStyles = makeStyles((theme) => ({
-	inputMargin: {
-		marginTop: "1.5em"
-	}
-}));
+const getStyles = (product, selectedProducts) => {
+  return {
+    fontWeight:
+      !selectedProducts || selectedProducts?.map(product => product.id).indexOf(product.id) === -1
+        ? 400
+        : 500,
+  };
+}
 
 export default function PackingFormDialog(props) {
 
-	const classes = useStyles();
-	const { isOpen, closeForm, handleSubmit, isDisabled } = props;
+  const { isOpen, closeForm, handleSubmit, isDisabled, nFailMax, prevProcess } = props;
 
-	const [processObj, setProcess] = useState(props.process)
-
-	const [isUploadingImg, setIsUploadingImg] = useState(false)
-
-	const handleUploadClick = (e) => {
-		const file = e.target.files[0]
-		const formData = new FormData()
-		formData.append('imgFile', file)
-		setIsUploadingImg(true)
-
-		ApiHandler.uploadImage(formData)
-			.then(response => response.json())
-			.then(data => {
-				processObj.imgPaths.push(data.data)
-				setIsUploadingImg(false)
-			})
-	}
-
-	return (
-		<Dialog
-			maxWidth="xs"
-			open={isOpen}
-			onClose={closeForm}
-		>
-			<DialogTitle>{processObj.name}</DialogTitle>
-			<DialogContent>
-				<Button variant="contained" color="primary" component="label" disabled={isDisabled}>
-					Unggah Foto Proses
-					<input
-						accept="image/*"
-						type="file"
-						onChange={(e) => handleUploadClick(e)}
-						hidden
-					/>
-				</Button>
-				{isUploadingImg ?
-					<CircularProgress /> :
-					processObj.imgPaths &&
-					<SingleLineImageList isDisabled={isDisabled} itemData={processObj.imgPaths} delImg={(imgPath) => {
-						processObj.imgPaths.splice(processObj.imgPaths.findIndex(el => el === imgPath), 1)
-						setProcess({ ...processObj })
-					}}/>
-				}
-
-				
-				<TextField
-					required
-					autoComplete="off"
-					margin="dense"
-					label="Waktu Proses"
-					value={processObj.datetime || (new Date()).toISOString().substring(-1, 16)}
-					disabled={isDisabled}
-					type="datetime-local"
-					fullWidth
-					InputLabelProps={{
-						shrink: true,
-					}}
-					onChange={e => {
-						processObj.datetime = e.target.value
-						setProcess({ ...processObj })
-					}}
-				/>
+  const [processObj, setProcess] = useState(props.process)
+  const datetimeTemp = moment().format('YYYY-MM-DDTHH:mm')
+  const [isLoading, setIsLoading] = useState(false)
 
 
-				<TextField
-					required
-					autoComplete="off"
-					margin="dense"
-					label="Jumlah Kemasan"
-					InputProps={{
-						endAdornment: <InputAdornment position="end">Bks</InputAdornment>,
-					}}
-					value={processObj.nPack}
-					disabled={isDisabled}
-					type="number"
-					min="0"
-					fullWidth
-					onChange={e => {
-						processObj.nPack = e.target.value
-						setProcess({ ...processObj })
-					}}
-				/>
+  const [isDatetimeError, setIsDatetimeError] = useState(false);
+  const [isNFailError, setIsNFailError] = useState(false);
+  const [isProductsError, setIsProductsError] = useState(false);
+  const [isNPackErrors, setIsNPackErrors] = useState([]);
+
+  const [productDetail, setProductDetail] = useState({})
+  const [isProductDetailOpen, setIsProductDetailOpen] = useState(false)
 
 
-				<TextField
-					multiline
-					autoComplete="off"
-					margin="dense"
-					label="Catatan Tambahan"
-					value={processObj.note}
-					disabled={isDisabled}
-					fullWidth
-					onChange={(e) => {
-						processObj.note = e.target.value
-						setProcess({ ...processObj })
-					}}
-				/>
+  const getProductOptions = product => (
+    <MenuItem
+      key={'product-' + product.Record.id}
+      value={product.Record}
+      style={getStyles(product.Record, processObj.products)}
+    >
+      <img
+        width="70px"
+        src={"http://" + process.env.REACT_APP_API_SERVER + "/" + product.Record.imgPaths[0]}
+        alt={"Foto " + product.Record.name}
+        style={{ margin: '5px' }}
+      /> {"(" + product.Record.id + ") - " + product.Record.name}
 
-				<Button className={classes.inputMargin} style={{ marginBottom: "2em" }} disabled={isDisabled} variant="contained" onClick={() => { handleSubmit(processObj); closeForm() }} color="primary" autoFocus>
-					Simpan
-				</Button>
-			</DialogContent>
-		</Dialog>
-	)
+    </MenuItem>
+  )
+
+  const [products, setProducts] = useState({
+    success: false,
+    data: [],
+    message: "belum dilakukan fetch"
+  })
+
+  useEffect(() => {
+    if (!isDisabled && prevProcess.createdAt) {
+      ApiHandler.readProducts()
+        .then(res => res.json())
+        .then(data => setProducts(data))
+    }
+  }, [prevProcess, isDisabled])
+
+
+  const isInputValid = () => {
+    const isNPackError = isNPackErrors.find(isNPackError => isNPackError)
+    return !isDatetimeError && !isNFailError && !isNPackError
+  }
+
+  const validateInput = () => {
+    const isDatetimeBefore = moment(processObj.datetime).isBefore(prevProcess.datetime)
+    const isDatetimeEmpty = !processObj.datetime
+    setIsDatetimeError(isDatetimeEmpty || isDatetimeBefore)
+
+    const isNFailNan = isNaN(parseInt(processObj.nFail))
+    const isNFailOutRange = 0 > processObj.nFail || processObj.nFail > nFailMax
+    setIsNFailError(isNFailNan || isNFailOutRange)
+
+    const isProductsEmpty = !processObj.products || processObj.products.length === 0
+    setIsProductsError(isProductsEmpty)
+
+    let isProductPacksError = []
+    processObj.products?.map((product, i) => {
+      const isNPackNanOrLessThanOne = isNaN(parseInt(product.nPack)) || 1 > product.nPack
+      const isNPackOutRange = product.nPack > nFailMax - (processObj.nFail || 0)
+
+      return isProductPacksError[i] = isNPackNanOrLessThanOne || isNPackOutRange
+    })
+
+    setIsNPackErrors(isProductPacksError)
+  }
+
+  const setIsErrorFalse = attr => {
+    switch (attr) {
+      case 'datetime':
+        setIsDatetimeError(false)
+        break;
+
+      case 'nFail':
+        setIsNFailError(false)
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  const handleTextfieldChange = (e, attr) => {
+    setIsErrorFalse(attr)
+    processObj[attr] = e.target.value ? e.target.value : null
+
+    setProcess({ ...processObj })
+  }
+
+  const handleNumberfieldChange = (e, attr) => {
+    setIsErrorFalse(attr)
+    processObj[attr] = isNaN(parseInt(e.target.value)) ? null : parseInt(e.target.value)
+
+    setProcess({ ...processObj })
+  }
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault()
+
+    if (isInputValid()) {
+      setIsLoading(true);
+      handleSubmit(processObj).then(() => {
+        closeForm();
+        setIsLoading(false);
+      });
+    }
+  }
+
+
+  return (
+    <>
+      <Dialog maxWidth="xs" open={isOpen} onClose={isLoading ? () => { } : closeForm}>
+
+        {
+          !isLoading &&
+          <IconButton
+            aria-label="close"
+            onClick={closeForm}
+            children={<CloseIcon />}
+            style={{
+              position: 'absolute',
+              right: '.3em',
+              top: '.3em',
+            }}
+          />
+        }
+
+        <DialogTitle>{processObj.name}</DialogTitle>
+
+        <DialogContent>
+          {
+            isLoading ?
+              <Grid container justifyContent="center">
+                <CircularProgress />
+              </Grid>
+              :
+              <>
+                {
+                  processObj.imgPaths &&
+                  <SingleLineImageList
+                    isDisabled={isDisabled}
+                    imgPaths={processObj.imgPaths}
+                    processObj={processObj}
+                    setProcess={setProcess}
+                  />
+                }
+
+                {
+                  !isDisabled &&
+                  <UploadButton setIsImagesUploading={setIsLoading} processObj={processObj} />
+                }
+
+                <form id="PackingForm" noValidate autoComplete="off" onSubmit={handleFormSubmit}>
+
+                  <TextField
+                    fullWidth
+                    required
+
+                    label="Waktu Proses"
+                    margin="normal"
+                    type="datetime-local"
+
+                    error={isDatetimeError}
+
+                    value={processObj.datetime || datetimeTemp}
+
+                    helperText={getDatetimeHelperText(isDatetimeError, prevProcess.datetime)}
+                    InputProps={getInputProps(isDisabled)}
+                    onChange={e => handleTextfieldChange(e, 'datetime')}
+                  />
+
+                  <FormControl
+                    fullWidth
+                    style={{ margin: '0.5em 0' }}
+                    error={isProductsError}
+                  >
+                    <InputLabel id="productsSelectLabel">Produk</InputLabel>
+                    <Select
+                      required
+                      multiple
+
+                      labelId="productsSelectLabel"
+                      disabled={Boolean(isDisabled)}
+
+                      value={processObj.products || []}
+                      input={
+                        <Input
+                          {...getInputProps(isDisabled)}
+                        />
+                      }
+                      renderValue={selected => (
+                        <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                          {
+                            selected?.map(product =>
+                              <ProductChip
+                                key={product.id}
+                                product={product}
+                                onClick={() => {
+                                  setProductDetail({ ...product })
+                                  setIsProductDetailOpen(true)
+                                }}
+                                isDisabled={!isDisabled}
+                              />
+                            )
+                          }
+                        </div>
+                      )}
+                      onChange={e => handleTextfieldChange(e, 'products')}
+                    >
+                      {
+                        products.data?.map(getProductOptions)
+                      }
+                    </Select>
+                    <FormHelperText>{getDefaultHelperText(isProductsError)}</FormHelperText>
+                  </FormControl>
+
+
+                  {
+                    processObj.products?.map((product, i) =>
+                      <TextField
+                        key={product.id}
+                        fullWidth
+                        required
+
+                        type="number"
+                        margin="dense"
+                        label={"Jumlah Kemasan " + product.name}
+
+                        error={isNPackErrors[i]}
+
+                        value={parseInt(processObj.products[i].nPack) || (processObj.products[i].nPack === 0 ? 0 : '')}
+
+                        helperText={getNPackHelperText(isNPackErrors[i], product.pcsPerChicken * (nFailMax - (processObj.nFail || 0)))}
+                        InputProps={getInputProps(isDisabled, 'Bks')}
+                        onChange={e => {
+                          isNPackErrors[i] = false
+                          setIsNPackErrors([...isNPackErrors])
+                          processObj.products[i].nPack = isNaN(parseInt(e.target.value)) ? e.target.value : parseInt(e.target.value)
+
+                          setProcess({ ...processObj })
+                        }}
+
+                      />
+                    )
+
+                  }
+
+
+                  <TextField
+                    fullWidth
+                    required
+
+                    label="Jumlah Gagal"
+                    margin="dense"
+                    type="number"
+
+                    error={isNFailError}
+
+                    value={parseInt(processObj.nFail) || (processObj.nFail === 0 ? 0 : '')}
+
+                    helperText={getNFailHelperText(isNFailError, nFailMax)}
+                    InputProps={getInputProps(isDisabled, 'Ekor')}
+                    onChange={e => handleNumberfieldChange(e, 'nFail')}
+                  />
+
+
+                  <TextField
+                    fullWidth
+                    multiline
+
+                    label="Catatan Tambahan"
+                    margin="dense"
+
+                    value={processObj.note || ''}
+
+                    InputProps={getInputProps(isDisabled)}
+                    onChange={e => handleTextfieldChange(e, 'note')}
+                  />
+
+                </form>
+              </>
+          }
+        </DialogContent>
+
+        <DialogActions>
+          {
+            !isLoading &&
+            <>
+              <Button type="button" color="inherit" onClick={() => closeForm()}>
+                {isDisabled ? 'Tutup' : 'Batal'}
+              </Button>
+
+              {
+                !isDisabled &&
+                <Button
+                  type="submit"
+                  disabled={!isInputValid()}
+                  form="PackingForm"
+                  color="primary"
+                  onClick={() => {
+                    if (!processObj.datetime) {
+                      processObj.datetime = datetimeTemp
+                      setProcess({ ...processObj })
+                    }
+
+                    validateInput()
+                  }}
+                >
+                  Simpan
+                </Button>
+              }
+            </>
+          }
+        </DialogActions>
+      </Dialog>
+
+
+      <ProductForm
+        isOpen={isProductDetailOpen}
+        isDisabled={true}
+        closeForm={() => setIsProductDetailOpen(false)}
+        product={productDetail}
+        title={'Rincian Produk: [' + productDetail.id + '] ' + productDetail.name}
+      />
+    </>
+  )
 
 }

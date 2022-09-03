@@ -1,167 +1,268 @@
 import { useState } from "react";
-import { makeStyles } from '@material-ui/core/styles';
+import { getDefaultHelperText, getInputProps, getDatetimeHelperText, getNFailHelperText, getDefaultHelperTextNumberField } from "./ProcessFormHelper";
 
 import Button from "@material-ui/core/Button";
 import CircularProgress from "@material-ui/core/CircularProgress";
+import CloseIcon from '@material-ui/icons/Close';
 import Dialog from "@material-ui/core/Dialog";
+import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogTitle from "@material-ui/core/DialogTitle";
-import TextField from "@material-ui/core/TextField";
-
-import ApiHandler from "../../classes/ApiHandler";
-import { InputAdornment } from "@material-ui/core";
+import Grid from "@material-ui/core/Grid";
+import IconButton from '@material-ui/core/IconButton';
+import moment from "moment";
 import SingleLineImageList from "../SingleLineImageList";
+import TextField from "@material-ui/core/TextField";
+import UploadButton from "../UploadButton";
 
-
-const useStyles = makeStyles((theme) => ({
-	inputMargin: {
-		marginTop: "1.5em"
-	}
-}));
 
 export default function ReceiveFormDialog(props) {
 
+  const { isOpen, closeForm, handleSubmit, isDisabled, batchDate } = props;
 
-	const classes = useStyles();
+  const [processObj, setProcess] = useState(props.process)
+  const datetimeTemp = moment().format('YYYY-MM-DDTHH:mm')
+  const [isLoading, setIsLoading] = useState(false)
 
-	const { isOpen, closeForm, handleSubmit, isDisabled } = props;
+  const [isDatetimeError, setIsDatetimeError] = useState(false);
+  const [isNFailError, setIsNFailError] = useState(false);
+  const [isFromError, setIsFromError] = useState(false);
+  const [isQtyEstimatedError, setIsQtyEstimatedError] = useState(false);
 
-	const [processObj, setProcess] = useState(props.process)
+  const validateInput = () => {
 
-	const [isUploadingImg, setIsUploadingImg] = useState(false)
+    const isDatetimeBeforeThanBatch = moment(processObj.datetime).isBefore(batchDate)
+    const isDatetimeEmpty = !processObj.datetime
+    setIsDatetimeError(isDatetimeEmpty || isDatetimeBeforeThanBatch)
 
-	const handleUploadClick = (e) => {
-		const file = e.target.files[0]
-		const formData = new FormData()
-		formData.append('imgFile', file)
-		setIsUploadingImg(true)
+    const isFromEmpty = !processObj.from
+    setIsFromError(isFromEmpty);
 
-		ApiHandler.uploadImage(formData)
-			.then(response => response.json())
-			.then(data => {
-				processObj.imgPaths.push(data.data)
-				setIsUploadingImg(false)
-			})
-	}
+    const isQtyEstimatedNanOrLessThanZero = isNaN(parseInt(processObj.qtyEstimated)) || processObj.qtyEstimated < 0
+    setIsQtyEstimatedError(isQtyEstimatedNanOrLessThanZero);
 
+    const isNFailNan = isNaN(parseInt(processObj.nFail))
+    const isNFailOutRange = 0 > processObj.nFail || processObj.nFail > processObj.qtyEstimated
+    setIsNFailError(isNFailNan || isNFailOutRange)
+  }
 
+  const isInputValid = () => {
+    return (!isDatetimeError) && (!isNFailError) && (!isFromError) && (!isQtyEstimatedError)
+  }
 
-	return (
-		<Dialog
-			maxWidth="xs"
-			open={isOpen}
-			onClose={closeForm}
-		>
-			<DialogTitle>{processObj.name}</DialogTitle>
-			<DialogContent>
-				<Button variant="contained" color="primary" component="label" disabled={isDisabled}>
-					Unggah Foto Proses
-					<input
-						accept="image/*"
-						type="file"
-						onChange={(e) => handleUploadClick(e)}
-						hidden
-					/>
-				</Button>
-				{isUploadingImg ?
-					<CircularProgress /> :
-					processObj.imgPaths &&
-					<SingleLineImageList isDisabled={isDisabled} itemData={processObj.imgPaths} delImg={(imgPath) => {
-						processObj.imgPaths.splice(processObj.imgPaths.findIndex(el => el === imgPath), 1)
-						setProcess({ ...processObj })
-					}}/>
-				}
+  const setIsErrorFalse = attr => {
+    switch (attr) {
+      case 'datetime':
+        setIsDatetimeError(false)
+        break;
 
-				<TextField
-					required
-					autoComplete="off"
-					margin="dense"
-					label="Waktu Proses"
-					value={processObj.datetime}
-					disabled={isDisabled}
-					type="datetime-local"
-					fullWidth
-					InputLabelProps={{
-						shrink: true,
-					}}
-					onChange={e => {
-						processObj.datetime = e.target.value
-						setProcess({ ...processObj })
-					}}
-				/>
+      case 'nFail':
+        setIsNFailError(false)
+        break;
 
-				<TextField
-					required
-					autoComplete="off"
-					margin="dense"
-					label="Terima Dari"
-					value={processObj.from}
-					disabled={isDisabled}
-					fullWidth
-					onChange={e => {
-						processObj.from = e.target.value
-						setProcess({ ...processObj })
-					}}
-				/>
+      case 'qtyEstimated':
+        setIsQtyEstimatedError(false)
+        break;
 
-				<TextField
-					required
-					autoComplete="off"
-					margin="dense"
-					label="Jumlah Terima"
-					value={processObj.qtyEstimated}
-					disabled={isDisabled}
-					type="number"
-					min="0"
-					fullWidth
-					InputProps={{
-						endAdornment: <InputAdornment position="end">Ekor</InputAdornment>,
-					}}
-					onChange={e => {
-						processObj.qtyEstimated = e.target.value
-						setProcess({ ...processObj })
-					}}
-				/>
+      case 'from':
+        setIsFromError(false)
+        break;
 
-				<TextField
-					required
-					autoComplete="off"
-					margin="dense"
-					label="Jumlah Gagal"
-					value={processObj.nFail}
-					disabled={isDisabled}
-					type="number"
-					min="0"
-					fullWidth
-					InputProps={{
-						endAdornment: <InputAdornment position="end">Ekor</InputAdornment>,
-					}}
-					onChange={e => {
-						processObj.nFail = e.target.value
-						setProcess({ ...processObj })
-					}}
-				/>
+      default:
+        break;
+    }
+  }
+
+  const handleTextfieldChange = (e, attr) => {
+    setIsErrorFalse(attr)
+    processObj[attr] = e.target.value ? e.target.value : null
+
+    setProcess({ ...processObj })
+  }
+
+  const handleNumberfieldChange = (e, attr) => {
+    setIsErrorFalse(attr)
+    processObj[attr] = isNaN(parseInt(e.target.value)) ? null : parseInt(e.target.value)
+
+    setProcess({ ...processObj })
+  }
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault()
+
+    if (isInputValid()) {
+      setIsLoading(true);
+      handleSubmit(processObj).then(() => {
+        closeForm();
+        setIsLoading(false);
+      });
+    }
+  }
 
 
-				<TextField
-					multiline
-					autoComplete="off"
-					margin="dense"
-					label="Catatan Tambahan"
-					value={processObj.note}
-					disabled={isDisabled}
-					fullWidth
-					onChange={(e) => {
-						processObj.note = e.target.value
-						setProcess({ ...processObj })
-					}}
-				/>
+  return (
+    <Dialog maxWidth="xs" open={isOpen} onClose={isLoading ? () => { } : closeForm}>
 
-				<Button className={classes.inputMargin} style={{ marginBottom: "2em" }} disabled={isDisabled} variant="contained" onClick={() => { handleSubmit(processObj); closeForm() }} color="primary" autoFocus>
-					Simpan
-				</Button>
-			</DialogContent>
-		</Dialog>
-	)
+      {
+        !isLoading &&
+        <IconButton
+          aria-label="close"
+          onClick={closeForm}
+          children={<CloseIcon />}
+          style={{
+            position: 'absolute',
+            right: '.3em',
+            top: '.3em',
+          }}
+        />
+      }
+
+      <DialogTitle>Data {processObj.name}</DialogTitle>
+
+      <DialogContent>
+        {
+          isLoading ?
+            <Grid container justifyContent="center">
+              <CircularProgress />
+            </Grid>
+            :
+            <>
+              {
+                processObj.imgPaths &&
+                <SingleLineImageList
+                  isDisabled={isDisabled}
+                  imgPaths={processObj.imgPaths}
+                  processObj={processObj}
+                  setProcess={setProcess}
+                />
+              }
+
+              {
+                !isDisabled &&
+                <UploadButton setIsImagesUploading={setIsLoading} processObj={processObj} />
+              }
+
+              <form id="ReceivedForm" noValidate autoComplete="off" onSubmit={handleFormSubmit}>
+
+                <TextField
+                  fullWidth
+                  required
+
+                  label="Waktu Proses"
+                  margin="normal"
+                  type="datetime-local"
+
+                  error={isDatetimeError}
+
+                  value={processObj.datetime || datetimeTemp}
+
+                  helperText={getDatetimeHelperText(isDatetimeError, batchDate)}
+                  InputProps={getInputProps(isDisabled)}
+                  onChange={e => handleTextfieldChange(e, 'datetime')}
+                />
+
+                <TextField
+                  required
+                  fullWidth
+
+                  label="Terima Dari"
+                  margin="dense"
+
+                  error={isFromError}
+
+                  value={processObj.from || ""}
+
+                  helperText={getDefaultHelperText(isFromError)}
+                  InputProps={getInputProps(isDisabled)}
+                  onChange={e => handleTextfieldChange(e, 'from')}
+                />
+
+                <TextField
+                  fullWidth
+                  required
+
+                  margin="dense"
+                  label="Jumlah Terima"
+                  type="number"
+
+                  error={isQtyEstimatedError}
+
+                  value={parseInt(processObj.qtyEstimated) || (processObj.qtyEstimated === 0 ? 0 : '')}
+
+                  helperText={getDefaultHelperTextNumberField(isQtyEstimatedError)}
+                  InputProps={getInputProps(isDisabled, 'Ekor')}
+                  onChange={e => handleNumberfieldChange(e, 'qtyEstimated')}
+                />
+
+                <TextField
+                  required
+                  fullWidth
+
+                  margin="dense"
+                  label="Jumlah Gagal"
+                  type="number"
+
+                  error={isNFailError}
+
+                  value={parseInt(processObj.nFail) || (processObj.nFail === 0 ? 0 : '')}
+
+                  helperText={getNFailHelperText(isNFailError, processObj.qtyEstimated)}
+                  InputProps={getInputProps(isDisabled, 'Ekor')}
+                  onChange={e => handleNumberfieldChange(e, 'nFail')}
+                />
+
+
+                <TextField
+                  fullWidth
+                  multiline
+
+                  label="Catatan Tambahan"
+                  margin="dense"
+
+                  value={processObj.note || ''}
+
+                  InputProps={getInputProps(isDisabled)}
+                  onChange={e => handleTextfieldChange(e, 'note')}
+                />
+
+              </form>
+            </>
+        }
+      </DialogContent>
+
+      <DialogActions>
+        {
+          !isLoading &&
+          <>
+            <Button type="button" color="inherit" onClick={() => closeForm()}>
+              {isDisabled ? 'Tutup' : 'Batal'}
+            </Button>
+
+            {
+              !isDisabled &&
+              <Button
+                type="submit"
+                disabled={!isInputValid()}
+                form="ReceivedForm"
+                color="primary"
+                onClick={() => {
+                  if (!processObj.datetime) {
+                    processObj.datetime = datetimeTemp
+                    setProcess({ ...processObj })
+                  }
+
+                  validateInput()
+                }}
+              >
+                Simpan
+              </Button>
+            }
+          </>
+        }
+      </DialogActions>
+
+
+    </Dialog>
+  )
 
 }

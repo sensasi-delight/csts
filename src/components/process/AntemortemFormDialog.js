@@ -1,140 +1,218 @@
 import { useState } from "react";
-import { makeStyles } from '@material-ui/core/styles';
+import { getInputProps, getDatetimeHelperText, getNFailHelperText } from "./ProcessFormHelper";
 
 import Button from "@material-ui/core/Button";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import Dialog from "@material-ui/core/Dialog";
+import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogTitle from "@material-ui/core/DialogTitle";
-import TextField from "@material-ui/core/TextField";
-
-import ApiHandler from "../../classes/ApiHandler";
-import {Grid, InputAdornment } from "@material-ui/core";
+import Grid from "@material-ui/core/Grid";
+import IconButton from '@material-ui/core/IconButton';
+import moment from "moment";
 import SingleLineImageList from "../SingleLineImageList";
+import TextField from "@material-ui/core/TextField";
+import UploadButton from "../UploadButton";
+
+import CloseIcon from '@material-ui/icons/Close';
 
 
-const useStyles = makeStyles((theme) => ({
-	inputMargin: {
-		marginTop: "1.5em"
-	}
-}));
 
 export default function AntemortemFormDialog(props) {
 
-	const classes = useStyles();
+  const { isOpen, closeForm, handleSubmit, isDisabled, nFailMax, prevProcess } = props;
+
+  const [processObj, setProcess] = useState(props.process)
+  const datetimeTemp = moment().format('YYYY-MM-DDTHH:mm')
+  const [isLoading, setIsLoading] = useState(false)
 
 
-	const { isOpen, closeForm, handleSubmit, isDisabled } = props;
-
-	const [processObj, setProcess] = useState(props.process)
-
-	const [isUploadingImg, setIsUploadingImg] = useState(false)
-
-	const handleUploadClick = (e) => {
-		const file = e.target.files[0]
-		const formData = new FormData()
-		formData.append('imgFile', file)
-		setIsUploadingImg(true)
-
-		ApiHandler.uploadImage(formData)
-			.then(response => response.json())
-			.then(data => {
-				processObj.imgPaths.push(data.data)
-				setIsUploadingImg(false)
-			})
-	}
-
-	return (
-		<Dialog
-			maxWidth="xs"
-			open={isOpen}
-			onClose={closeForm}
-		>
-			<DialogTitle>{processObj.name}</DialogTitle>
-			<DialogContent>
-				<Button variant="contained" color="primary" component="label" disabled={isDisabled}>
-					Unggah Foto Proses
-					<input
-						accept="image/*"
-						type="file"
-						onChange={(e) => handleUploadClick(e)}
-						hidden
-					/>
-				</Button>
-				{isUploadingImg ?
-					<Grid
-						container
-						justifyContent="center"
-					>
-						<CircularProgress />
-					</Grid>
-					:
-					processObj.imgPaths &&
-					<SingleLineImageList isDisabled={isDisabled} itemData={processObj.imgPaths} delImg={(imgPath) => {
-						processObj.imgPaths.splice(processObj.imgPaths.findIndex(el => el === imgPath), 1)
-						setProcess({ ...processObj })
-					}} />
-				}
+  const [isDatetimeError, setIsDatetimeError] = useState(false);
+  const [isNFailError, setIsNFailError] = useState(false);
 
 
-				<TextField
-					required
-					autoComplete="off"
-					margin="dense"
-					label="Waktu Proses"
-					value={processObj.datetime}
-					disabled={isDisabled}
-					type="datetime-local"
-					fullWidth
-					InputLabelProps={{
-						shrink: true,
-					}}
-					onChange={e => {
-						processObj.datetime = e.target.value
-						setProcess({ ...processObj })
-					}}
-				/>
+  const validateInput = () => {
+    const isDatetimeBefore = moment(processObj.datetime).isBefore(prevProcess.datetime)
+    const isDatetimeEmpty = !processObj.datetime
+    setIsDatetimeError(isDatetimeEmpty || isDatetimeBefore)
+
+    const isNFailNan = isNaN(parseInt(processObj.nFail))
+    const isNFailOutRange = 0 > processObj.nFail || processObj.nFail > nFailMax
+    setIsNFailError(isNFailNan || isNFailOutRange)
+  }
+
+  const isInputValid = () => {
+    return !isDatetimeError && !isNFailError
+  }
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault()
+
+    if (isInputValid()) {
+      setIsLoading(true);
+      handleSubmit(processObj).then(() => {
+        closeForm();
+        setIsLoading(false);
+      });
+    }
+  }
+
+  const setIsErrorFalse = attr => {
+    switch (attr) {
+      case 'datetime':
+        setIsDatetimeError(false)
+        break;
+
+      case 'nFail':
+        setIsNFailError(false)
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  const handleTextfieldChange = (e, attr) => {
+    setIsErrorFalse(attr)
+    processObj[attr] = e.target.value ? e.target.value : null
+
+    setProcess({ ...processObj })
+  }
+
+  const handleNumberfieldChange = (e, attr) => {
+    setIsErrorFalse(attr)
+    processObj[attr] = isNaN(parseInt(e.target.value)) ? null : parseInt(e.target.value)
+
+    setProcess({ ...processObj })
+  }
 
 
-				<TextField
-					required
-					autoComplete="off"
-					margin="dense"
-					label="Jumlah Gagal"
-					InputProps={{
-						endAdornment: <InputAdornment position="end">Ekor</InputAdornment>,
-					}}
-					value={processObj.nFail}
-					disabled={isDisabled}
-					type="number"
-					min="0"
-					fullWidth
-					onChange={e => {
-						processObj.nFail = e.target.value
-						setProcess({ ...processObj })
-					}}
-				/>
 
+  return (
+    <Dialog maxWidth="xs" open={isOpen} onClose={isLoading ? () => { } : closeForm}>
+      
+      {
+        !isLoading &&
+        <IconButton
+          aria-label="close"
+          onClick={closeForm}
+          children={<CloseIcon />}
+          style={{
+            position: 'absolute',
+            right: '.3em',
+            top: '.3em',
+          }}
+        />
+      }
 
-				<TextField
-					multiline
-					autoComplete="off"
-					margin="dense"
-					label="Catatan Tambahan"
-					value={processObj.note}
-					disabled={isDisabled}
-					fullWidth
-					onChange={(e) => {
-						processObj.note = e.target.value
-						setProcess({ ...processObj })
-					}}
-				/>
+      <DialogTitle>Data {processObj.name}</DialogTitle>
 
-				<Button className={classes.inputMargin} style={{ marginBottom: "2em" }} disabled={isDisabled} variant="contained" onClick={() => { handleSubmit(processObj); closeForm() }} color="primary" autoFocus>
-					Simpan
-				</Button>
-			</DialogContent>
-		</Dialog>
-	)
+      <DialogContent>
+        {
+          isLoading ?
+            <Grid container justifyContent="center">
+              <CircularProgress />
+            </Grid>
+            :
+            <>
+              {
+                processObj.imgPaths &&
+                <SingleLineImageList
+                  isDisabled={isDisabled}
+                  imgPaths={processObj.imgPaths}
+                  processObj={processObj}
+                  setProcess={setProcess}
+                />
+              }
+
+              {
+                !isDisabled &&
+                <UploadButton setIsImagesUploading={setIsLoading} processObj={processObj} />
+              }
+
+              <form id="AntemortemForm" noValidate autoComplete="off" onSubmit={handleFormSubmit}>
+
+                <TextField
+                  fullWidth
+                  required
+
+                  label="Waktu Proses"
+                  margin="normal"
+                  type="datetime-local"
+
+                  error={isDatetimeError}
+
+                  value={processObj.datetime || datetimeTemp}
+
+                  helperText={getDatetimeHelperText(isDatetimeError, prevProcess.datetime)}
+                  InputProps={getInputProps(isDisabled)}
+                  onChange={e => handleTextfieldChange(e, 'datetime')}
+                />
+
+                <TextField
+                  required
+                  fullWidth
+
+                  margin="dense"
+                  label="Jumlah Gagal"
+                  type="number"
+
+                  error={isNFailError}
+                  value={parseInt(processObj.nFail) || (processObj.nFail === 0 ? 0 : '')}
+
+                  helperText={getNFailHelperText(isNFailError, nFailMax)}
+                  InputProps={getInputProps(isDisabled, 'Ekor')}
+                  onChange={e => handleNumberfieldChange(e, 'nFail')}
+                />
+
+                <TextField
+                  fullWidth
+                  multiline
+
+                  label="Catatan Tambahan"
+                  margin="dense"
+
+                  value={processObj.note || ''}
+
+                  InputProps={getInputProps(isDisabled)}
+                  onChange={e => handleTextfieldChange(e, 'note')}
+                />
+              </form>
+            </>
+        }
+      </DialogContent>
+      <DialogActions>
+        {
+          !isLoading &&
+          <>
+            <Button type="button" color="inherit" onClick={() => closeForm()}>
+              {isDisabled ? 'Tutup' : 'Batal'}
+            </Button>
+
+            {
+              !isDisabled &&
+              <Button
+                type="submit"
+                disabled={!isInputValid()}
+                form="AntemortemForm"
+                color="primary"
+                onClick={() => {
+                  if (!processObj.datetime) {
+                    processObj.datetime = datetimeTemp
+                    setProcess({ ...processObj })
+                  }
+
+                  validateInput()
+                }}
+              >
+                Simpan
+              </Button>
+            }
+          </>
+        }
+      </DialogActions>
+
+    </Dialog>
+  )
 
 }

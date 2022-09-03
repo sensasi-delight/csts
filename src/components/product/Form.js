@@ -1,121 +1,381 @@
-import Button from "@material-ui/core/Button";
-import TextField from "@material-ui/core/TextField";
-import Grid from "@material-ui/core/Grid";
+import { useEffect, useState } from "react";
+import { getInputProps } from "../process/ProcessFormHelper";
 
 import ApiHandler from "../../classes/ApiHandler";
-import { useState } from "react";
-import CircularProgress from '@material-ui/core/CircularProgress';
+import TagsField from "../TagsField";
+import UploadButton from "../UploadButton";
+import SingleLineImageList from "../SingleLineImageList";
+
+import Button from "@material-ui/core/Button";
+import CircularProgress from "@material-ui/core/CircularProgress";
+import Dialog from "@material-ui/core/Dialog";
+import DialogActions from "@material-ui/core/DialogActions";
+import DialogContent from "@material-ui/core/DialogContent";
+import DialogTitle from "@material-ui/core/DialogTitle";
+import Grid from "@material-ui/core/Grid";
+import IconButton from '@material-ui/core/IconButton';
+import moment from "moment/moment";
+import TextField from "@material-ui/core/TextField";
+
+import CloseIcon from '@material-ui/icons/Close';
+
 
 export default function ProductForm(props) {
 
-	const { isNew, product, setProduct } = props;
+  const { isOpen, closeForm, isDisabled, products, product, title, handleAfterSubmit } = props;
 
-	const [isUploadingImg, setIsUploadingImg] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-	const handleUploadClick = event => {
-		const file = event.target.files[0]
-		const formData = new FormData()
-		setIsUploadingImg(true)
-
-		formData.append('imgFile', file)
-
-		ApiHandler.uploadImage(formData)
-			.then(response => response.json())
-			.then(data => {
-				product.imgPath = data.data
-				setProduct(product)
-				setIsUploadingImg(false)
-			})
-	}
+  const [formProduct, setFormProduct] = useState({})
+  const [isNew, setIsNew] = useState(!product?.createdAt)
 
 
-	return (
-		<>
-			<Grid container spacing={1} style={{ marginBottom: "1em" }}>
-				<Grid item xs={6}>
-					<Button variant="contained" color="primary" component="label">
-						Unggah Foto
-						<input
-							accept="image/*"
-							type="file"
-							onChange={handleUploadClick}
-							hidden
-						/>
-					</Button>
-					{isUploadingImg ?
-						<CircularProgress /> :
-						product.imgPath &&
-						<img width="100%" src={"http://" + process.env.REACT_APP_API_SERVER + "/" + product.imgPath} alt="Foto Produk" />
-					}
+  useEffect(() => {
+    setFormProduct(product || {})
+    setIsNew(!product?.createdAt)
+
+    setProductIdValidation({
+      error: false,
+      helperText: null
+    })
+
+    setNameValidation({
+      error: false,
+      helperText: null
+    })
+    
+    setPcsPerChickenValidation({
+      error: false,
+      helperText: null
+    })
+  }, [product])
 
 
-				</Grid>
-			</Grid>
-			<TextField
-				required
-				autoComplete="off"
-				margin="dense"
-				label="Kode"
-				value={product.id}
-				disabled={!isNew}
-				fullWidth
-				onChange={(e) => {
-					product.id = e.target.value
-					setProduct({ ...product })
-				}}
-			/>
-			<TextField
-				required
-				autoComplete="off"
-				margin="dense"
-				label="Nama"
-				value={product.name}
-				fullWidth
-				onChange={(e) => {
-					product.name = e.target.value
-					setProduct({ ...product })
-				}}
-			/>
-			<TextField
-				required
-				autoComplete="off"
-				margin="dense"
-				label="Bahan"
-				value={product.ingredients.join(',')}
-				fullWidth
-				onChange={(e) => {
-					product.ingredients = e.target.value.split(',')
-					setProduct({ ...product })
-				}}
-				helperText="pisahkan dengan koma (,)"
-			/>
 
-			{/* <input
-				accept="image/*"
-				// className={classes.input}
-				id="contained-button-file"
-				// multiple
-				type="file"
-			/>
-			<label htmlFor="contained-button-file">
-				<Button variant="contained" color="primary" component="span">
-					Upload
-				</Button>
-			</label> */}
 
-			<TextField
-				required
-				autoComplete="off"
-				margin="dense"
-				label="NO. Sertifikat Halal"
-				value={product.halalCertificateId}
-				fullWidth
-				onChange={(e) => {
-					product.halalCertificateId = e.target.value
-					setProduct({ ...product })
-				}}
-			/>
-		</>
-	)
+  // VALIDATION BLOCK ------------------------------------
+
+  const [productIdValidation, setProductIdValidation] = useState({
+    error: false,
+    helperText: null
+  })
+
+  const [nameValidation, setNameValidation] = useState({
+    error: false,
+    helperText: null
+  })
+
+  const [pcsPerChickenValidation, setPcsPerChickenValidation] = useState({
+    error: false,
+    helperText: null
+  })
+
+
+  const validateProductId = () => new Promise(async resolve => {
+    const isProductIdEmpty = !formProduct.id?.trim()
+
+    if (isProductIdEmpty) {
+
+      productIdValidation.error = true
+      productIdValidation.helperText = 'Mohon mengisi isian ini.'
+
+      setProductIdValidation(productIdValidation)
+
+      resolve(productIdValidation)
+
+      return;
+    }
+
+    const productFoundById = products.find(productExists => productExists.id === formProduct.id.trim())
+    const isNewAndExists = isNew && productFoundById
+    const isNotNewAndNotExists = !isNew && !productFoundById
+
+
+    if (isNewAndExists) {
+      productIdValidation.error = true
+      productIdValidation.helperText = 'Kode produk sudah digunakan, silahkan masukkan kode produk baru.'
+
+      setProductIdValidation(productIdValidation)
+    }
+
+    if (isNotNewAndNotExists) {
+      productIdValidation.error = true
+      productIdValidation.helperText = 'Terjadi kesalahan, data produk tidak ditemukan.'
+
+      setProductIdValidation(productIdValidation)
+    }
+
+
+    resolve(productIdValidation)
+  })
+
+  const validateProductName = () => new Promise(async resolve => {
+    const isNameEmpty = !formProduct.name?.trim()
+
+    if (isNameEmpty) {
+
+      nameValidation.error = true
+      nameValidation.helperText = 'Mohon mengisi isian ini.'
+
+      setNameValidation(nameValidation)
+
+    }
+
+    resolve(nameValidation)
+  })
+
+  const validatePcsPerChicken = () => new Promise(async resolve => {
+
+    const isNan = isNaN(parseInt(formProduct.pcsPerChicken))
+    const isLessThanZero = 0 > formProduct.pcsPerChicken
+
+    if (isNan || isLessThanZero) {
+
+      pcsPerChickenValidation.error = true
+      pcsPerChickenValidation.helperText = 'Mohon mengisi isian 0 ke atas.'
+
+      setPcsPerChickenValidation(pcsPerChickenValidation)
+
+    }
+
+    resolve(pcsPerChickenValidation)
+  })
+
+  const asyncIsInputsValid = async () => {
+    const productIdValidation = await validateProductId();
+    const nameValidation = await validateProductName();
+    const pcsPerChickenValidation = await validatePcsPerChicken();
+
+    return !productIdValidation.error && !nameValidation.error && !pcsPerChickenValidation.error;
+  }
+
+  const isInputsValid = () => {
+    return !productIdValidation.error && !nameValidation.error && !pcsPerChickenValidation.error;
+  }
+
+
+  // HANDLE BLOCK ------------------------------------
+
+  const handleTextfieldChange = (e, attr) => {
+    formProduct[attr] = e.target.value
+
+    if (!e.target.value) {
+      delete formProduct[attr]
+    }
+
+    if (attr === 'id') {
+      setProductIdValidation({
+        error: false,
+        helperText: null
+      })
+    }
+
+    if (attr === 'name') {
+      setNameValidation({
+        error: false,
+        helperText: null
+      })
+    }
+
+    setFormProduct({ ...formProduct })
+  }
+
+  const handleNumberfieldChange = (e, attr) => {
+    formProduct[attr] = isNaN(parseInt(e.target.value)) ? null : parseInt(e.target.value)
+
+    if (attr === 'pcsPerChicken') {
+      setPcsPerChickenValidation({
+        error: false,
+        helperText: null
+      })
+    }
+
+    setFormProduct({ ...formProduct })
+  }
+
+  const handleFormSubmit = async e => {
+    e.preventDefault()
+
+    setIsLoading(true);
+
+    const isInputsValid = await asyncIsInputsValid();
+
+    if (!isInputsValid) {
+      setIsLoading(false);
+    }
+
+    if (isInputsValid && isNew) {
+      formProduct.createdAt = moment().format()
+      setFormProduct()
+      await ApiHandler.createProduct(formProduct)
+    }
+
+    if (isInputsValid && !isNew) {
+      formProduct.updatedAt = moment().format()
+
+      await ApiHandler.updateProduct(formProduct)
+    }
+
+    if (isInputsValid && handleAfterSubmit) {
+      handleAfterSubmit()
+    }
+
+    if (isInputsValid) {
+      closeForm()
+    }
+
+    setIsLoading(false)
+  }
+
+
+  return (
+    <Dialog maxWidth="xs" open={isOpen} onClose={isLoading ? null : closeForm}>
+
+      {
+        !isLoading &&
+        <IconButton
+          aria-label="close"
+          onClick={closeForm}
+          children={<CloseIcon />}
+          style={{
+            position: 'absolute',
+            right: '.3em',
+            top: '.3em',
+          }}
+        />
+      }
+
+
+      <DialogTitle>{title || (isNew ? 'Masukkan Produk Baru' : 'Ubah data: [' + product.id + '] ' + product.name)}</DialogTitle>
+
+      <DialogContent>
+        {
+          isLoading ?
+            <Grid container justifyContent="center">
+              <CircularProgress />
+            </Grid>
+            :
+
+            <>
+
+              {
+                formProduct.imgPaths &&
+                <SingleLineImageList
+                  isDisabled={isDisabled}
+                  processObj={formProduct}
+                  setProcess={setFormProduct}
+                />
+              }
+
+              {
+                !isDisabled &&
+                <UploadButton setIsImagesUploading={setIsLoading} processObj={formProduct} />
+              }
+
+              <form id="productForm" noValidate autoComplete="off" onSubmit={handleFormSubmit}>
+                <TextField
+                  fullWidth
+                  required
+
+                  margin="dense"
+                  label="Kode"
+
+                  value={formProduct.id || ''}
+
+                  InputProps={getInputProps(!isNew || isDisabled)}
+                  onChange={(e) => handleTextfieldChange(e, 'id')}
+
+                  {...productIdValidation}
+                />
+
+                <TextField
+                  fullWidth
+                  required
+
+                  margin="dense"
+                  label="Nama"
+
+                  value={formProduct.name || ''}
+
+                  InputProps={getInputProps(isDisabled)}
+                  onChange={(e) => handleTextfieldChange(e, 'name')}
+
+                  {...nameValidation}
+                />
+
+                {
+                  !isDisabled &&
+
+                  <TextField
+                    fullWidth
+                    required
+
+                    margin="dense"
+                    label="pcs/chicken"
+                    type="number"
+
+                    value={parseInt(formProduct.pcsPerChicken) || (formProduct.pcsPerChicken === 0 ? 0 : '')}
+
+                    InputProps={getInputProps(isDisabled)}
+                    onChange={(e) => handleNumberfieldChange(e, 'pcsPerChicken')}
+
+                    {...pcsPerChickenValidation}
+                  />
+                }
+
+                <TagsField
+                  fullWidth
+
+                  helperText="pisahkan dengan koma (,)"
+                  margin="dense"
+                  label="Bahan"
+
+                  values={formProduct.ingredients || []}
+                  InputProps={getInputProps(isDisabled)}
+                  setValues={ingredients => {
+                    formProduct.ingredients = ingredients
+                    setFormProduct({ ...formProduct })
+                  }}
+                />
+
+                <TextField
+                  fullWidth
+
+                  margin="dense"
+                  label="NO. Sertifikat Halal"
+
+                  value={formProduct.halalCertificateId || ''}
+
+                  InputProps={getInputProps(isDisabled)}
+                  onChange={(e) => handleTextfieldChange(e, 'halalCertificateId')}
+                />
+              </form>
+            </>
+        }
+      </DialogContent>
+      <DialogActions>
+        {
+          !isLoading &&
+          <>
+            <Button type="button" color="inherit" onClick={closeForm}>
+              {isDisabled ? 'Tutup' : 'Batal'}
+            </Button>
+
+            {
+              !isDisabled &&
+              <Button
+                type="submit"
+                disabled={!isInputsValid()}
+                form="productForm"
+                color="primary"
+              >
+                Simpan
+              </Button>
+            }
+          </>
+        }
+      </DialogActions>
+    </Dialog>
+  )
 
 }
