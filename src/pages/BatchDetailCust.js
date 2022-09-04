@@ -153,7 +153,7 @@ export default function BatchesDetailCust() {
                   {batch?.processes.map((processObj, i) => (
 
                     <TimelineItem key={processObj.id}>
-                      <TimelineOppositeContent style={{ flex: 0.1 }} />
+                      <TimelineOppositeContent style={{ flex: 0.1, padding: 0 }} />
                       <TimelineSeparator>
                         <TimelineDot />
                         {i !== batch?.processes.length - 1 && <TimelineConnector />}
