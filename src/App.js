@@ -2,9 +2,9 @@ import Toolbar from "@material-ui/core/Toolbar";
 import MainAppBar from "./components/MainAppBar";
 
 import {
-	BrowserRouter as Router,
-	Switch,
-	Route
+  BrowserRouter as Router,
+  Switch,
+  Route
 } from "react-router-dom";
 import BatchesList from "./pages/BatchesList";
 import BatchDetail from "./pages/BatchDetail";
@@ -14,34 +14,32 @@ import BatchDetailCust from "./pages/BatchDetailCust";
 function App() {
 
 
-	return (
-		<Router>
-			{/* <MainAppBar /> */}
-			{/* <Toolbar /> */}
-			<Switch>
-				<Route path="/" exact>
-					<MainAppBar />
-					<Toolbar />
+  return (
+    <Router>
+      <Switch>
+        <Route path="/" exact>
+          <MainAppBar />
+          <Toolbar />
 
-					<BatchesList />
-				</Route>
+          <BatchesList />
+        </Route>
 
-				<Route path="/batch/:batchId/:date">
-					<MainAppBar />
-					<Toolbar />
+        <Route path="/batch/:batchId/:date">
+          <MainAppBar />
+          <Toolbar />
 
-					<BatchDetail />
-				</Route>
+          <BatchDetail />
+        </Route>
 
-				<Route path="/view/batch/:batchId/:date">
-				<Toolbar />
+        <Route path="/view/batch/:batchId/:date">
+          <Toolbar />
 
-					<BatchDetailCust />
-				</Route>
+          <BatchDetailCust />
+        </Route>
 
-			</Switch>
-		</Router>
-	);
+      </Switch>
+    </Router>
+  );
 }
 
 export default App;

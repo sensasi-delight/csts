@@ -292,7 +292,7 @@ function BatchDetail(props) {
           <Grid container spacing={4}>
 
             <Grid item xs={12} sm={4} style={{ textAlign: "center" }}>
-              <QRCode value={qrValue} />
+              <QRCode bgColor="#f0f8ff" value={qrValue} />
             </Grid>
             <Grid item xs={12} sm={8}>
 

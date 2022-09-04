@@ -96,7 +96,7 @@ export default function BatchesDetailCust() {
 
             : <>
               <Container className={classes.cardGrid} maxWidth="md" >
-                <QRCode style={{ paddingBottom: "2em" }} value={window.location.href} />
+                <QRCode bgColor="#f0f8ff" style={{ paddingBottom: "2em" }} value={window.location.href} />
                 <Typography variant="h4" component="h1" gutterBottom>Ringkasan</Typography>
                 <Table size='small'>
                   <TableBody>
