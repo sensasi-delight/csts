@@ -182,10 +182,9 @@ function BatchDetail(props) {
 
   const pathnames = [...window.location.pathname.split('/')]
 
-  const batchId = pathnames[2]
-  const date = pathnames[3]
+  const [batchId, date] = pathnames.slice(-2);
 
-  pathnames.splice(1, 0, 'view')
+  pathnames.splice(-3, 0, 'view')
   const qrValue = window.location.host + pathnames.join('/')
 
   const [batch, setBatch] = useState(undefined);
@@ -572,7 +571,7 @@ function BatchDetail(props) {
             handleSubmit={handleUpdateBatch}
           />
         }
-        
+
 
         <ProductForm
           isOpen={isShowProductDetail}

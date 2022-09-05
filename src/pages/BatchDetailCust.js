@@ -49,8 +49,10 @@ const useStyles = makeStyles((theme) => ({
 export default function BatchesDetailCust() {
   const classes = useStyles();
 
-  const batchId = window.location.pathname.split('/')[3]
-  const date = window.location.pathname.split('/')[4]
+  const pathnames = window.location.pathname.split('/')
+
+  const [batchId, date] = pathnames.slice(-2);
+
 
   const [batch, setBatch] = useState(undefined)
 
