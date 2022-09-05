@@ -15,7 +15,7 @@ function App() {
 
 
   return (
-    <Router>
+    <Router basename={process.env.REACT_APP_BASENAME || ''}>
       <Switch>
         <Route path="/" exact>
           <MainAppBar />
