@@ -65,7 +65,7 @@ export default function SingleLineImageList({ isDisabled, processObj, setProcess
               <div
                 className={classes.item}
                 style={{
-                  backgroundImage: `url('http://${process.env.REACT_APP_API_SERVER}/${imgPath}')`,
+                  backgroundImage: `url('${process.env.REACT_APP_API_SERVER}/${imgPath}')`,
                   backgroundRepeat: 'no-repeat',
                   backgroundAttachment: 'fixed',
                   backgroundPosition: 'center center',
@@ -112,7 +112,7 @@ export default function SingleLineImageList({ isDisabled, processObj, setProcess
         </IconButton>
 
         <DialogContent style={{ padding: 0 }}>
-          <img width="100%" src={"http://" + process.env.REACT_APP_API_SERVER + "/" + imgPath} alt="Foto Proses" />
+          <img width="100%" src={process.env.REACT_APP_API_SERVER + "/" + imgPath} alt="Foto Proses" />
         </DialogContent>
       </Dialog>
     </div>

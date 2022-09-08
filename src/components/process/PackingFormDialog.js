@@ -62,7 +62,7 @@ export default function PackingFormDialog(props) {
     >
       <img
         width="70px"
-        src={"http://" + process.env.REACT_APP_API_SERVER + "/" + product.Record.imgPaths[0]}
+        src={process.env.REACT_APP_API_SERVER + "/" + product.Record.imgPaths[0]}
         alt={"Foto " + product.Record.name}
         style={{ margin: '5px' }}
       /> {"(" + product.Record.id + ") - " + product.Record.name}

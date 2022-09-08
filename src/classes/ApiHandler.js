@@ -11,7 +11,7 @@ export default class ApiHandler {
 	static get (func, channel, id = undefined, queries = undefined) {
 		ApiHandler.checker()
 
-		let url = "http://" + ApiHandler.apiServerAddress + "/" + func + "/" + channel + "/" + ApiHandler.orgName
+		let url = ApiHandler.apiServerAddress + "/" + func + "/" + channel + "/" + ApiHandler.orgName
 		url += (id ? "/" + id : '')
 
 		if (queries) {
@@ -27,7 +27,7 @@ export default class ApiHandler {
 
 	static put (func, channel, id, data) {
 		ApiHandler.checker()
-		const url = "http://" + ApiHandler.apiServerAddress + "/" + func + "/" + channel + "/" + ApiHandler.orgName +  "/" + id ;
+		const url = ApiHandler.apiServerAddress + "/" + func + "/" + channel + "/" + ApiHandler.orgName +  "/" + id ;
 
 		const requestOptions = {
 			method: 'PUT',
@@ -42,7 +42,7 @@ export default class ApiHandler {
 
 	static post (func, channel, data) {
 		ApiHandler.checker()
-		const url = "http://" + ApiHandler.apiServerAddress + "/" + func + "/" + channel + "/" + ApiHandler.orgName
+		const url = ApiHandler.apiServerAddress + "/" + func + "/" + channel + "/" + ApiHandler.orgName
 
 		const requestOptions = {
 			method: 'POST',
@@ -58,7 +58,7 @@ export default class ApiHandler {
 
 	static uploadImage (formData) {
 		ApiHandler.checker()
-		const url = "http://" + ApiHandler.apiServerAddress + "/image/upload" ;
+		const url = ApiHandler.apiServerAddress + "/image/upload" ;
 
 		const requestOptions = {
 			method: 'POST',

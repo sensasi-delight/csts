@@ -96,7 +96,7 @@ export default function ProductTable(props) {
                     <TableCell>
                       {
                         product.imgPaths?.length > 0 &&
-                        <img width="100px" src={"http://" + process.env.REACT_APP_API_SERVER + "/" + product.imgPaths[0]} alt={"Foto " + product.name} />
+                        <img width="100px" src={process.env.REACT_APP_API_SERVER + "/" + product.imgPaths[0]} alt={"Foto " + product.name} />
                       }
                     </TableCell>
                     <TableCell>{product.id}</TableCell>

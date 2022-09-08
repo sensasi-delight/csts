@@ -139,7 +139,7 @@ export default function SlaughteringFormDialog(props) {
     >
       <img
         width="70px"
-        src={"http://" + process.env.REACT_APP_API_SERVER + "/" + slaughterer.Record.imgPaths[0]}
+        src={process.env.REACT_APP_API_SERVER + "/" + slaughterer.Record.imgPaths[0]}
         alt={"Foto " + slaughterer.Record.name}
         style={{ margin: '5px' }}
       /> {"(" + slaughterer.Record.id + ") - " + slaughterer.Record.name}

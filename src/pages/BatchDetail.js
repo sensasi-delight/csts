@@ -233,7 +233,7 @@ function BatchDetail(props) {
               isProcessHasFinished && isProcessHasImage &&
               <CardMedia
                 className={classes.cardMedia}
-                image={"http://" + API_SERVER + "/" + process.imgPaths[0]}
+                image={API_SERVER + "/" + process.imgPaths[0]}
                 title={process.name}
               />
             }

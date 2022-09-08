@@ -8,7 +8,7 @@ export default function ProductChip({ product, onClick, isDisabled, label }) {
 
   const avatar = imgPath
     ? {
-      avatar: <Avatar src={"http://" + process.env.REACT_APP_API_SERVER + "/" + imgPath} />
+      avatar: <Avatar src={process.env.REACT_APP_API_SERVER + "/" + imgPath} />
     } : {}
 
   return (

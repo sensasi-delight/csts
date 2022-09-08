@@ -98,7 +98,7 @@ export default function SlaughtererTable(props) {
                     <TableCell>
                       {
                         slaughterer.imgPaths?.length > 0 &&
-                        <img width="100px" src={"http://" + process.env.REACT_APP_API_SERVER + "/" + slaughterer.imgPaths[0]} alt={"Foto " + slaughterer.name} />
+                        <img width="100px" src={process.env.REACT_APP_API_SERVER + "/" + slaughterer.imgPaths[0]} alt={"Foto " + slaughterer.name} />
                       }
                     </TableCell>
                     <TableCell>{slaughterer.id}</TableCell>
