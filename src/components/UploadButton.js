@@ -119,8 +119,6 @@ export default function UploadButton({ setIsImagesUploading, processObj }) {
       temp = 0;
     }
 
-    console.log(devices);
-
     setSelectedDeviceId(temp)
     setVideoConstraints({
       deviceId: devices[temp].deviceId
