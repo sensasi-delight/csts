@@ -71,7 +71,7 @@ export default function UploadButton({ setIsImagesUploading, processObj }) {
   const handleCameraUpload = async dataUri => {
 
     let blob;
-    
+
     setIsImagesUploading(true);
 
 
@@ -175,15 +175,13 @@ export default function UploadButton({ setIsImagesUploading, processObj }) {
                 <IconButton
                   aria-label="cancel"
                   onClick={() => setDataUri(null)}
-                  children={<CancelIcon style={{ fontSize: '4em' }} />}
+                  children={<CancelIcon style={{ fontSize: '2em' }} />}
                   color="secondary"
                   style={{
                     position: 'absolute',
                     bottom: '.3em',
-
-                    left: '25%',
-
-                    marginRight: '1em'
+                    transform: 'translateX(-50%)',
+                    left: '25%'
                   }}
                 />
 
@@ -193,15 +191,13 @@ export default function UploadButton({ setIsImagesUploading, processObj }) {
                     handleCameraUpload(dataUri)
                     setIsCameraOpen(false)
                   }}
-                  children={<CheckCircleIcon style={{ fontSize: '4em' }} />}
+                  children={<CheckCircleIcon style={{ fontSize: '2em' }} />}
                   style={{
                     color: "#4caf50",
                     position: 'absolute',
                     bottom: '.3em',
-
-                    right: '25%',
-
-                    marginLeft: '1em'
+                    transform: 'translateX(-50%)',
+                    right: '25%'
                   }}
                 />
               </>
@@ -237,27 +233,25 @@ export default function UploadButton({ setIsImagesUploading, processObj }) {
                     <IconButton
                       aria-label="capture"
                       onClick={() => setDataUri(getScreenshot())}
-                      children={<FiberManualRecordIcon style={{ fontSize: '4em' }} />}
+                      children={<FiberManualRecordIcon style={{ fontSize: '3em' }} />}
                       color="secondary"
                       style={{
                         position: 'absolute',
                         bottom: '.3em',
-                        // alignSelf: "center"
                         left: '50%',
-                        right: '50%',
-
+                        transform: 'translateX(-50%)'
                       }}
                     />
 
                     <IconButton
                       aria-label="change camera"
                       onClick={() => handleFlipCamera()}
-                      children={<FlipCameraIosIcon style={{ fontSize: '3em' }} />}
+                      children={<FlipCameraIosIcon style={{ fontSize: '2em' }} />}
                       color="secondary"
                       style={{
                         position: 'absolute',
-                        bottom: '1em',
-                        right: '1em',
+                        bottom: '.8em',
+                        right: '.8em',
                         color: "aliceblue"
                       }}
                     />
