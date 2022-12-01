@@ -1,4 +1,4 @@
-# Chicken Slaughterer Tracing System
+# Chicken Slaughtering Tracing System
 
 ## Contact
 
