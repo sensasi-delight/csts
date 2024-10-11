@@ -1,6 +1,6 @@
 # Chicken Slaughtering Tracing System - App
 
-This repository is a supplement resource for a research article entitled "[Pengembangan Sistem Telusur Berbasis Blockchain pada Rumah Potong Ayan Halal](https://repository.its.ac.id/97209/)" (Development of Blockchain-Based Traceability System for Halal Slaughterhouse).
+This repository is a supplement resource for a research entitled "[Pengembangan Sistem Telusur Berbasis Blockchain pada Rumah Potong Ayan Halal](https://repository.its.ac.id/97209/)" (Development of Blockchain-Based Traceability System for Halal Slaughterhouse).
 
 Other resources:
 
