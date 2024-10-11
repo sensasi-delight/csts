@@ -2,7 +2,7 @@
 
 This repository is a supplement resource for a research article entitled ["PENGEMBANGAN SISTEM TELUSUR BERBASIS BLOCKCHAIN PADA RUMAH POTONG AYAM HALAL"](https://repository.its.ac.id/97209/).
 
-Other supplies:
+Other resources:
 
 - Caliper Benchmark: [GitHub](https://github.com/sensasi-delight/csbn-caliper-benchmarks) or [DOI](https://doi.org/10.5281/zenodo.7401754)
 - Hyperledger Network: [GitHub](https://github.com/sensasi-delight/csbn-network) or [DOI](https://doi.org/10.5281/zenodo.7401750)
