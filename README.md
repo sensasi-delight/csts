@@ -4,9 +4,9 @@ This repository is a supplement resource for a research entitled "[Pengembangan 
 
 Other resources:
 
-- Caliper Benchmark: [GitHub](https://github.com/sensasi-delight/csbn-caliper-benchmarks) or [DOI](https://doi.org/10.5281/zenodo.7401754)
-- Hyperledger Network: [GitHub](https://github.com/sensasi-delight/csbn-network) or [DOI](https://doi.org/10.5281/zenodo.7401750)
 - REST API Server: [GitHub](https://github.com/sensasi-delight/csbn-rest-api) or [DOI](https://doi.org/10.5281/zenodo.7394418)
+- Hyperledger Network: [GitHub](https://github.com/sensasi-delight/csbn-network) or [DOI](https://doi.org/10.5281/zenodo.7401750)
+- Caliper Benchmark: [GitHub](https://github.com/sensasi-delight/csbn-caliper-benchmarks) or [DOI](https://doi.org/10.5281/zenodo.7401754)
 
 ## Abstract
 
